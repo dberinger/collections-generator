@@ -1,0 +1,9 @@
+DEF_F_EXTENSION = [("csv file(*.csv)", "*.csv")]
+COLL_MAX_SIZE = 20000
+CMS_UPLOAD_F_HEADERS = ['sellerid', 'productid', 'stock']
+EXPORT_F_PARTIAL = f'collection_*_filtered_items*.csv'
+DOWNLOAD_WAIT_T = 60
+UPLOAD_WAIT_T = 60
+ITEMS_FAILED_LIMIT = 10
+DOWNLOADS_DIR = fr'C:\Users\Dan\Downloads'
+UPLOADS_DIR = fr'C:\Users\Dan\PycharmProjects\CollectionsGenerator\demo\uploads'
