@@ -1,4 +1,5 @@
 from typing import Union
+from config import COLL_MAX_SIZE
 import pandas as pd
 
 
@@ -7,7 +8,7 @@ class Collection:
         self.df = df
         self.extra_input = None
         self.is_extra_input_merged = False
-        self.size_max = 5000
+        self.size_max = COLL_MAX_SIZE
         self.columns = {}
         self.local_to_offshore = {}
         self.messages = []
