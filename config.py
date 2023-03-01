@@ -1,6 +1,6 @@
 PROJECT_DIR = r'C:\Users\Dan\PycharmProjects\CollectionsGenerator'
 DEF_F_EXTENSION = [("csv file(*.csv)", "*.csv")]
-COLL_MAX_SIZE = 20000
+COLL_MAX_SIZE = 5000
 CMS_UPLOAD_F_HEADERS = ['sellerid', 'productid', 'stock']
 EXPORT_F_PARTIAL = f'collection_*_filtered_items*.csv'
 DOWNLOAD_WAIT_T = 60
