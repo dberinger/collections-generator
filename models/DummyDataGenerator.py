@@ -1,4 +1,4 @@
-from Collection import CmsColl, BankColl
+from models.Collection import CmsColl, BankColl
 import pandas as pd
 from random import sample, choices, uniform, randrange
 from tkinter.filedialog import asksaveasfile
@@ -108,7 +108,7 @@ class DummyDataGenerator:
             local_to_offshore_vals = [self.cms_coll.local_to_offshore['local'],
                                       self.cms_coll.local_to_offshore['offshore']]
 
-            self.df[self.cms_coll.local_to_offshore['col_name']] = choices(local_to_offshore_vals, k=self.size)
+            self.df[self.cms_coll.columns['seller_type']] = choices(local_to_offshore_vals, k=self.size)
 
         # bank only -----------------
         if self.sample_type == 'bank':
@@ -131,7 +131,7 @@ class DummyDataGenerator:
             local_to_offshore_vals = [self.bank_coll.local_to_offshore['local'],
                                       self.bank_coll.local_to_offshore['offshore']]
 
-            self.df[self.bank_coll.local_to_offshore['col_name']] = choices(local_to_offshore_vals, k=self.size)
+            self.df[self.bank_coll.columns['seller_type']] = choices(local_to_offshore_vals, k=self.size)
 
     def save_to_csv(self):
         def_f_name = f'{self.sample_type}_{self.size}_dummy_data'
@@ -147,5 +147,5 @@ class DummyDataGenerator:
 
 # select source type and sample size to generate and save to file
 
-# dumdum = DummyDataGenerator('bank', 100)
+# dumdum = DummyDataGenerator('bank', 20)
 # dumdum.save_to_csv()
