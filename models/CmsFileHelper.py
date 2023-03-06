@@ -4,7 +4,7 @@ from time import sleep
 from datetime import datetime
 from typing import Union
 import pandas as pd
-from Collection import CmsColl, BankColl
+from models.Collection import CmsColl, BankColl
 import config
 
 
@@ -101,8 +101,8 @@ class CmsFileHelper:
                 return False
         elif src_f_path is None:
             df = pd.DataFrame(columns=self.upload_headers)
-            df['seller_id'] = seller_product_ids['sellerid']
-            df['product_id'] = seller_product_ids['productid']
+            df['sellerid'] = seller_product_ids['seller_id']
+            df['productid'] = seller_product_ids['product_id']
 
         try:
             if backup:
@@ -110,13 +110,13 @@ class CmsFileHelper:
             else:
                 f_name = self.upload_f_name
 
-            upload_f_path = fr'{output_f_dir}\{f_name}'
-            df[['sellerid', 'productid', 'stock']].to_csv(upload_f_path, index=False)
-            is_valid, product_count = self.is_upload_f_valid(upload_f_path)
+            if self.upload_f_path is None:
+                self.upload_f_path = fr'{output_f_dir}\{f_name}'
+            df[['sellerid', 'productid', 'stock']].to_csv(self.upload_f_path, index=False)
+            is_valid, product_count = self.is_upload_f_valid(self.upload_f_path)
             self.upload_f_count = product_count
 
             if is_valid:
-                self.upload_f_path = upload_f_path
                 return True
             else:
                 self.add_message('Upload file generated, but invalid.')
@@ -136,14 +136,24 @@ class CmsFileHelper:
                     return False
 
                 f_name = f'{self.coll_id}_full.csv'
-                upload_f_path = fr'{output_f_dir}\{f_name}'
+                if self.upload_f_path is None:
+                    self.upload_f_path = fr'{output_f_dir}\{f_name}'
                 df = collection.get_df()
-                df[df.columns.tolist()].to_csv(upload_f_path, index=False)
+                df[df.columns.tolist()].to_csv(self.upload_f_path, index=False)
 
         except Exception as e:
             self.add_message('Full file not generated')
-            print(str(e))
             return False
+
+    def prepare_custom_full_f(self, collection: Union[CmsColl, BankColl], output_full_path: str):
+        try:
+            df = collection.get_df()
+            df[df.columns.tolist()].to_csv(output_full_path, index=False)
+            return True
+        except Exception as e:
+            self.add_message('Full file not generated')
+            return False
+
 
     @staticmethod
     def are_all_values_instance_of(val_type, column):

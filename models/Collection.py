@@ -1,5 +1,5 @@
 from typing import Union
-from config import COLL_MAX_SIZE
+from config import COLL_MAX_SIZE, CMS_COLL_COLUMNS, BANK_COLL_COLUMNS
 import pandas as pd
 
 
@@ -192,6 +192,10 @@ class Collection:
 class CmsColl(Collection):
     def __init__(self, df):
         super().__init__(df)
+        # validate headers
+        if list(df.columns) != CMS_COLL_COLUMNS:
+            raise ValueError(f'\nInvalid Dataframe headers. Should be:\n{CMS_COLL_COLUMNS}')
+
         self.columns = {
             'seller_id': 'Seller ID',
             'product_id': 'Product ID',
@@ -262,6 +266,10 @@ class CmsColl(Collection):
 class BankColl(Collection):
     def __init__(self, df):
         super().__init__(df)
+        # validate headers
+        if list(df.columns) != BANK_COLL_COLUMNS:
+            raise ValueError(f'\nInvalid Dataframe headers. Should be:\n{BANK_COLL_COLUMNS}')
+
         self.columns = {
             'seller_id': 'seller_id',
             'product_id': 'product_id',
@@ -324,6 +332,9 @@ class BankColl(Collection):
             if criteria['extra_input']:
                 self.set_extra_input(criteria['extra_input'])
 
+            if criteria['cluster']:
+                self.filter_by_cluster(criteria['cluster'])
+
             if criteria['cat_id']:
                 self.filter_by_cat_allocation(criteria['cat_id'])
 
@@ -359,3 +370,6 @@ class BankColl(Collection):
         except Exception as e:
             self.add_message('Failure in Collection creation')
             print(e)
+
+
+cms = BankColl(pd.read_csv(r'C:\Users\Dan\PycharmProjects\CollectionsGenerator\demo\bank_100_dummy_data.csv'))
