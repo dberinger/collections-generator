@@ -2,13 +2,15 @@ import textwrap
 import tkinter
 import customtkinter
 import pandas as pd
+from pandas import DataFrame
+
 import logic
 from models.Collection import CmsColl, BankColl
+from models.CmsFileHelper import CmsFileHelper
 import ctypes
-from tkinter import messagebox
+from tkinter import messagebox, filedialog, simpledialog
 from config import PROJECT_DIR
 from configparser import ConfigParser
-from tkinter import filedialog
 from config import DEF_F_EXTENSION
 from sys import stdout
 
@@ -61,14 +63,14 @@ class App(customtkinter.CTk):
         self.frame_left.grid_rowconfigure(11, minsize=10)
 
         self.select_src_btn = customtkinter.CTkButton(master=self.frame_left,
-                                                         text="Select source",
-                                                         command=self.select_src,
-                                                         text_color='#fff')
+                                                      text="Select source",
+                                                      command=self.select_src,
+                                                      text_color='#fff')
         self.select_src_btn.grid(row=1, column=0, columnspan=2, pady=10, padx=20)
 
         self.src_lbl = customtkinter.CTkLabel(master=self.frame_left,
-                                                 text="No source file selected.",
-                                                 font=("Roboto Medium", -12))  # font name and size in px
+                                              text="No source file selected.",
+                                              font=("Roboto Medium", -12))  # font name and size in px
         self.src_lbl.grid(row=2, column=0, columnspan=2, pady=(5, 10), padx=10)
 
         self.extra_input_btn = customtkinter.CTkButton(master=self.frame_left,
@@ -88,7 +90,7 @@ class App(customtkinter.CTk):
         self.clr_extra_input_btn.grid(row=3, column=1, padx=(0, 15))
 
         self.total_lbl = customtkinter.CTkLabel(master=self.frame_left,
-                                                text="Total items:",
+                                                text="Total products:",
                                                 font=("Roboto Medium", -12))  # font name and size in px
         self.total_lbl.grid(row=4, column=0, columnspan=2, pady=10, padx=10)
 
@@ -99,6 +101,7 @@ class App(customtkinter.CTk):
 
         self.generate_btn = customtkinter.CTkButton(master=self.frame_left,
                                                     text="Create",
+                                                    command=self.generate_collection,
                                                     text_color='#fff')
         self.generate_btn.grid(row=7, column=0, columnspan=2, pady=10, padx=20)
 
@@ -255,7 +258,8 @@ class App(customtkinter.CTk):
         self.set_setting(bool(self.rating_var.get()), 'rating_switch_on')
         self.destroy()
 
-    def set_placeholder(self, ui_element, text: str):
+    @staticmethod
+    def set_placeholder(ui_element, text: str):
         if ui_element._state == 'normal':
             ui_element.configure(placeholder_text=text)
         elif ui_element._state == 'disabled':
@@ -263,81 +267,21 @@ class App(customtkinter.CTk):
             ui_element.configure(placeholder_text=text)
             ui_element.configure(state='disabled')
 
-    def extra_input_handler(self):
-        self.extra_input = tkinter.simpledialog.askstring(title="+Input",
-                                                          prompt="Paste seller and product ids without headers:")
-        if self.extra_input is None:
-            self.clear_extra_input()
-            return
-
-        self.extra_input = be.process_bd_input(self.extra_input)
-        print(self.extra_input[0])
-        if len(self.extra_input) != 0:
-            self.extra_input_btn.configure(text=f'BD: {len(self.extra_input[0])}')
-            self.clr_extra_input_btn.configure(fg_color='red', state=tkinter.NORMAL)
-
-    def clear_extra_input(self):
-        self.extra_input = ''
-        self.extra_input_btn.configure(text='+Input')
-        self.clr_extra_input_btn.configure(fg_color=None, state=tkinter.DISABLED)
-
     def clear_options(self):
         self.max_coll_size.delete(0, 'end')
-        # self.set_placeholder(self.max_coll_size, 'Max size')
+        self.set_placeholder(self.max_coll_size, 'Max size')
         self.cat_ids.delete(0, 'end')
+        self.set_placeholder(self.cat_ids, 'Category IDs')
         self.pp_min.delete(0, 'end')
+        self.set_placeholder(self.pp_min, 'Min')
         self.pp_max.delete(0, 'end')
+        self.set_placeholder(self.pp_max, 'Max')
         self.clusters_cmb_box.set('Clusters')
         self.clear_extra_input()
         self.ratio_local.delete(0, 'end')
         self.ratio_offshore.delete(0, 'end')
         self.ratio_local.insert(0, 3)
         self.ratio_offshore.insert(0, 2)
-
-    def get_user_set_coll_size(self):
-        try:
-            if len(self.max_coll_size.get()) != 0:
-                coll_size = int(self.max_coll_size.get())
-                if coll_size <= len(self.working_coll):
-                    df_size = coll_size
-                elif coll_size >= len(self.working_coll):
-                    df_size = len(self.working_coll)
-                elif coll_size > 20000:
-                    df_size = 20000
-
-                print(f'Coll size: {df_size}')
-                return df_size
-            else:
-                return None
-        except ValueError:
-            messagebox.showerror('Collection size error', 'Please input a natural number, eg 10000.\nGenerating file '
-                                                          'without size restrictions...')
-            return
-
-    def get_price_point_fields(self):
-        price_points = [[], [], []]
-        try:
-            price_points[0].append(self.pp_min.get())
-            price_points[0].append(self.pp_max.get())
-        except Exception as e:
-            print(e)
-            price_points[0] = ['', '']
-
-        if price_points == [['', ''], ['', ''], ['', '']]:
-            return None
-
-        for pair in price_points:
-            for i, value in enumerate(pair):
-                try:
-                    pair[i] = float(value)
-                except:
-                    pair[i] = ''
-            if pair != ['', ''] and '' not in pair:
-                if pair[0] > pair[1]:
-                    pair[0], pair[1] = pair[1], pair[0]
-            price_points = [pair for pair in price_points if pair != ['', '']]
-
-        return price_points
 
     # ******************************* SOURCE *******************************
 
@@ -398,6 +342,180 @@ class App(customtkinter.CTk):
         src_lbl_text = textwrap.fill(src_file_path.split("/")[-1], width=27)
         self.src_lbl.configure(text=src_lbl_text)
         self.src_lbl.configure(fg_color=("white", "gray38"))
+
+    def reset_collection(self):
+        self.working_coll.set_df(self.original_src.get_df().copy(deep=True))
+
+    # ******************************* EXTRA INPUT *******************************
+
+    def extra_input_handler(self):
+        self.extra_input = tkinter.simpledialog.askstring(title="+Input",
+                                                          prompt="Paste seller and product ids in 2 columns x "
+                                                                 "rows format,\n without headers:")
+
+        self.extra_input = logic.validate_extra_input(self.extra_input)
+
+        if self.extra_input is None:
+            self.clear_extra_input()
+            tkinter.messagebox.showerror('Error', "Couldn't process pasted input. Please make sure to paste 2 columns "
+                                                  "per x rows, as in spreadsheet, without headers.")
+            return
+
+        total_extra_input = len(self.extra_input['product_id'])
+        if total_extra_input != 0:
+            self.extra_input_btn.configure(text=f'+Input: {total_extra_input}')
+            self.clr_extra_input_btn.configure(fg_color='red', state=tkinter.NORMAL)
+
+    def clear_extra_input(self):
+        self.extra_input = ''
+        self.extra_input_btn.configure(text='+Input')
+        self.clr_extra_input_btn.configure(fg_color='gray38', state=tkinter.DISABLED)
+
+    # ******************************* READING CRITERIA *******************************
+
+    def get_user_set_coll_size(self):
+        user_custom_size = self.max_coll_size.get()
+        try:
+            if len(self.max_coll_size.get()) != 0:
+                return logic.validate_size(user_custom_size)
+            else:
+                return None
+        except ValueError:
+            messagebox.showerror('Collection size error', 'Please input a natural number, eg. 10000.')
+            return None
+
+    def get_cat_ids(self):
+        cat_ids = self.cat_ids.get()
+        try:
+            src_cat_ids = self.working_coll.get_column_values('cat_id')
+            return logic.validate_cat_ids(cat_ids, src_cat_ids)
+        except:
+            return None
+
+    def get_cluster(self):
+        cluster = self.clusters_cmb_box.get()
+        if cluster in ['All', 'Clusters', 'N/A']:
+            return None
+        else:
+            return cluster
+
+    def get_price_points(self):
+        price_points = {
+            'min': self.pp_min.get(),
+            'max': self.pp_max.get()
+        }
+
+        for key, price in price_points.items():
+            if price != '':
+                try:
+                    price = float(price)
+                    # check for negative
+                    if price < 0:
+                        price_points[key] = price * -1
+                    else:
+                        price_points[key] = price
+                except:
+                    messagebox.showerror('Price points error', 'Please make sure price points are positive numbers.\n'
+                                                               'Floating points number should be typed in with a dot.')
+                    price_points[key] = ''
+
+        return logic.validate_price_points(price_points)
+
+    def get_ratio(self):
+        try:
+            ratio = {
+                'local': int(self.ratio_local.get()),
+                'offshore': int(self.ratio_offshore.get())
+            }
+            # check if negative
+            for key, val in ratio.items():
+                if val < 0:
+                    ratio[key] = val * -1
+            return ratio
+        except:
+            messagebox.showerror('Ratio value error', 'Please input a natural number for ratio, eg. 3, 0 etc.')
+            return None
+
+    def get_sort_values(self):
+        sort = {
+            'sort_first': '',
+            'sort_next': ''
+        }
+
+        if bool(self.ado_var.get()):
+            sort['sort_first'] = 'ado'
+        if bool(self.rating_var.get()):
+            sort['sort_next'] = 'rating'
+
+        return sort
+
+    # ******************************* GENERATING COLLECTION *******************************
+
+    def get_all_criteria(self):
+        criteria = {}
+        criteria['size_min'] = None
+        criteria['size_max'] = self.get_user_set_coll_size()
+        criteria['extra_input'] = self.extra_input
+        criteria['cat_id'] = self.get_cat_ids()
+        criteria['cluster'] = self.get_cluster()
+        prices = self.get_price_points()
+        if prices is None:
+            criteria['price_min'], criteria['price_max'] = '', ''
+        else:
+            criteria['price_min'] = prices['min']
+            criteria['price_max'] = prices['max']
+        sort = self.get_sort_values()
+        criteria['sort_first'] = sort['sort_first']
+        criteria['sort_next'] = sort['sort_next']
+        criteria['ratio'] = self.get_ratio()
+        criteria['out_of_stock'] = bool(self.sold_out_checkbox_val.get())
+        return criteria
+
+    def generate_collection(self):
+        if not isinstance(self.working_coll, (CmsColl, BankColl)):
+            messagebox.showerror('Error', 'Please select a data source first.')
+            return
+        try:
+            criteria = self.get_all_criteria()
+            self.working_coll.process_by_criteria(criteria)
+            if len(self.working_coll.messages) > 0:
+                messages_str = '\n'.join(self.working_coll.messages)
+                messagebox.showinfo('Messages', messages_str)
+            if len(self.working_coll.get_column_values('product_id')) == 0:
+                messagebox.showinfo('Collection empty',
+                                    'Created collection is empty. Please consider changing criteria.\nNot saving file.')
+                self.reset_collection()
+                return
+
+            user_save_path = filedialog.asksaveasfilename(filetypes=DEF_F_EXTENSION,
+                                                          defaultextension=DEF_F_EXTENSION)
+            if user_save_path == '':
+                messagebox.showerror('Error', 'Please select a directory and a filename to save the generated collection.')
+                self.reset_collection()
+                return
+            fh = CmsFileHelper('')
+            # adjust to use in app
+            fh.upload_f_path = user_save_path
+            prep_result = fh.prepare_upload_f(seller_product_ids=self.working_coll.export_for_upload())
+            if not prep_result:
+                messagebox.showerror('Error', 'Failed to generate collection upload file.')
+                self.reset_collection()
+                return
+            if bool(self.full_file_checkbox_val.get()):
+                f_name = user_save_path.split("/")[-1]
+                save_path = user_save_path.split(f_name)[0]
+                full_save_path = f'{save_path}full_{f_name}'
+                full_prep_result = fh.prepare_custom_full_f(self.working_coll, full_save_path)
+                if not full_prep_result:
+                    messagebox.showerror('Error', 'Failed to generate full collection file.')
+                    self.reset_collection()
+                    return
+            messagebox.showinfo('Success', 'File(s) generated!')
+            self.reset_collection()
+        except:
+            messagebox.showerror('Error', 'Failure in collection generation process.')
+            self.reset_collection()
+            return
 
 
 if __name__ == "__main__":
