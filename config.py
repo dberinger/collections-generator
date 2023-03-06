@@ -8,3 +8,5 @@ UPLOAD_WAIT_T = 60
 ITEMS_FAILED_LIMIT = 10
 DOWNLOADS_DIR = r'C:\Users\Dan\Downloads'
 UPLOADS_DIR = fr'{PROJECT_DIR}\demo\uploads'
+CMS_COLL_COLUMNS = ['Seller ID', 'Product ID', 'Price', 'Old Price', 'ADO', 'Stock', 'Rating', 'Offshore Seller']
+BANK_COLL_COLUMNS = ['seller_id', 'product_id', 'price', 'ado', 'discount', 'category_id', 'cluster', 'rating', 'seller_type']
