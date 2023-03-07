@@ -46,7 +46,7 @@ All features focus around applying various criteria to a data source. They are a
 
 
 ## Setup
-TODO
+Setup is simple, it doesn't require Python etc. installed or admin rights to run. Please download [.zip archive](https://github.com/dberinger/collections-generator/releases/download/production-v1.0.0/Collections.Generator.v.1.0.zip). After unpacking, just open `Collections Generator v. 1.0.exe`.
 
 
 ## Usage
